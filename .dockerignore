@@ -1,0 +1,16 @@
+.git
+**/__pycache__
+**/*.pyc
+**/node_modules
+**/dist
+dataset
+test_images
+samples
+evaluation
+screenshots
+scripts
+frontend
+backend/uploads
+backend/results
+.venv
+.env

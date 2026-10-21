@@ -1,0 +1,31 @@
+name: PCB dashboard checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Syntax check
+        run: python -m compileall -q backend
+      - name: Analysis tests (without downloading model dependencies)
+        run: PYTHONPATH=backend python -m unittest discover -s backend/tests -v
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install
+        run: npm ci --prefix frontend
+      - name: Build
+        run: npm run build --prefix frontend
