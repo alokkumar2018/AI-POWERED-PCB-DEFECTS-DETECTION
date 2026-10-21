@@ -13,8 +13,8 @@ jobs:
         with:
           python-version: "3.11"
       - name: Syntax check
-        run: python -m compileall -q backend
-      - name: Analysis tests (without downloading model dependencies)
+        run: python -m compileall -q backend scripts/smoke_test.py
+      - name: Analysis tests (no heavy model dependencies)
         run: PYTHONPATH=backend python -m unittest discover -s backend/tests -v
   frontend:
     runs-on: ubuntu-latest
@@ -25,7 +25,20 @@ jobs:
           node-version: "24"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Install
-        run: npm ci --prefix frontend
-      - name: Build
-        run: npm run build --prefix frontend
+      - run: npm ci --prefix frontend
+      - run: npm run build --prefix frontend
+  inference-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install CPU PyTorch, then API dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install torch==2.12.1 torchvision==0.27.1 --index-url https://download.pytorch.org/whl/cpu
+          pip install -r backend/requirements.txt httpx
+      - name: Real-model API smoke test
+        run: python scripts/smoke_test.py
