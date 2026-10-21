@@ -1,9 +1,9 @@
-path: C:/PCB DEFECTS DETECTION/dataset
-
+# Dataset is not shipped in Git; download DeepPCB and convert labels to YOLO format.
+# Use the relative dataset folder for portable local training.
+path: dataset
 train: train/images
 val: valid/images
 test: test/images
-
 names:
   0: open
   1: short

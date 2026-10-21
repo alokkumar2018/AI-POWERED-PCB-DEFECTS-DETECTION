@@ -1,88 +1,52 @@
+"""Human-readable inspection summary; not a substitute for electrical testing."""
 from collections import Counter
-from datetime import datetime
+from datetime import datetime, timezone
+from uuid import uuid4
 
-def generate_analysis(detections, filename):
-    inspection_id = "PCB-" + datetime.now().strftime("%Y%m%d-%H%M%S")
 
-    timestamp = datetime.now().strftime("%d %b %Y, %I:%M %p")
-
-    total_defects = len(detections)
-
-    if total_defects == 0:
-        highest_confidence = 0
-        average_confidence = 0
-
-    else:
-
-        confidences = [d["confidence"] for d in detections]
-
-        highest_confidence = round(max(confidences) * 100, 2)
-
-        average_confidence = round(
-            sum(confidences) / total_defects * 100,
-            2
+def generate_analysis(detections, filename, threshold=0.25):
+    now = datetime.now(timezone.utc)
+    confidences = [float(item["confidence"]) for item in detections]
+    distribution = dict(Counter(item["type"] for item in detections))
+    total = len(detections)
+    highest = round(max(confidences) * 100, 2) if confidences else 0
+    average = round(sum(confidences) * 100 / total, 2) if confidences else 0
+    most_common = (
+        max(distribution, key=lambda key: (distribution[key], key))
+        if distribution else None
+    )
+    if total:
+        status = "MANUAL INSPECTION"
+        recommendation = (
+            "The model detected possible manufacturing defects. "
+            "Inspect each flagged area and verify with approved electrical/visual tests. "
+            "Do not reject or accept a board solely on AI predictions."
         )
-    defect_types = [d["type"] for d in detections]
-    distribution = dict(Counter(defect_types))
-
-    if total_defects == 0:
-        inspection_status = "PASS"
-
-    elif total_defects <= 10:
-        inspection_status = "MANUAL INSPECTION"
-
     else:
-        inspection_status = "FAIL"
-
-    if inspection_status == "PASS":
-
+        status = "PASS"
         recommendation = (
-        "PCB passed inspection. "
-        "No manufacturing defects detected."
-    )
-
-    elif inspection_status == "MANUAL INSPECTION":
-
-        recommendation = (
-        "PCB contains a moderate number of defects. "
-        "Manual inspection is recommended."
-    )
-
-    else:
-
-        recommendation = (
-        "PCB contains multiple defects. "
-        "Reject the PCB and review the manufacturing process."
-    )
-    observations = []
-    observations.append(
-    f"Total defects detected: {total_defects}"
-)
-    observations.append(
-    f"Highest confidence: {highest_confidence}%"
-)
-    observations.append(
-    f"Average confidence: {average_confidence}%"
-)
-    if distribution:
-
-        most_common = max(
-        distribution,
-        key=distribution.get
-    )
-
-    observations.append(
-        f"Most common defect: {most_common}"
-    )
+            "No defects were detected at the selected confidence threshold. "
+            "This is not certification of a defect-free PCB; carry out normal QA tests."
+        )
+    observations = [
+        f"Total potential defects: {total}",
+        f"Highest detection confidence: {highest}%",
+        f"Average detection confidence: {average}%",
+    ]
+    if most_common:
+        observations.append(f"Most common predicted defect: {most_common}")
+    observations.append("This report is an AI-assisted preliminary inspection.")
     return {
-    "inspection_id": inspection_id,
-    "timestamp": timestamp,
-    "filename": filename,
-    "total_defects": total_defects,
-    "highest_confidence": highest_confidence,
-    "average_confidence": average_confidence,
-    "distribution": distribution,
-    "inspection_status": inspection_status,
-    "recommendation": recommendation,
-    "observations": observations
-}
+        "inspection_id": "PCB-" + now.strftime("%Y%m%d-%H%M%S-") + uuid4().hex[:6].upper(),
+        "timestamp": now.strftime("%d %b %Y, %I:%M %p UTC"),
+        "filename": filename,
+        "total_defects": total,
+        "highest_confidence": highest,
+        "average_confidence": average,
+        "distribution": distribution,
+        "most_common_defect": most_common,
+        "inspection_status": status,
+        "confidence_threshold": round(threshold * 100, 2),
+        "recommendation": recommendation,
+        "observations": observations,
+    }

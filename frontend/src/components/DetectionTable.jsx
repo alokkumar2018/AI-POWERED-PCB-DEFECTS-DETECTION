@@ -1,79 +1,38 @@
 import "./DetectionTable.css";
 
-function DetectionTable({ detections }) {
-  if (!detections || detections.length === 0) {
+function DetectionTable({ detections = [] }) {
+  if (detections.length === 0) {
     return (
       <div className="empty-state">
-        <h3>No Defects Detected ✅</h3>
-        <p>Upload a PCB image to begin inspection.</p>
+        <h3>No model detections</h3>
+        <p>No defects were detected above the chosen model confidence threshold. Continue normal QA checks.</p>
       </div>
     );
   }
 
   return (
-    <div className="table-container">
-
-      <h2 className="table-title">
-        Detected Defects
-          </h2>
-          <div className="tabel-wrapper">
-
-      <table className="detection-table">
-
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Detected Defect</th>
-            <th>Confidence Score</th>
-          </tr>
-        </thead>
-
-        <tbody>
-
-          {detections.map((item, index) => {
-
-            const confidence = item.confidence * 100;
-
-            let badgeClass = "low";
-
-            if (confidence >= 80) {
-              badgeClass = "high";
-            }
-
-            else if (confidence >= 50) {
-              badgeClass = "medium";
-            }
-
-            return (
-
-              <tr key={index}>
-
-                <td>{index + 1}</td>
-
-                <td>{item.type}</td>
-
-                <td>
-
-                  <span className={`confidence ${badgeClass}`}>
-
-                    {confidence.toFixed(2)}%
-
-                  </span>
-
-                </td>
-
-              </tr>
-
-            );
-
-          })}
-
-        </tbody>
-
-            </table>
-        </div>
-
-    </div>
+    <section className="table-container">
+      <h2 className="table-title">Predicted Defects</h2>
+      <div className="table-wrapper">
+        <table className="detection-table">
+          <thead><tr><th>#</th><th>Defect class</th><th>Confidence</th><th>Bounding box (pixels)</th></tr></thead>
+          <tbody>
+            {detections.map((item, index) => {
+              const score = item.confidence * 100;
+              const level = score >= 80 ? "high" : score >= 50 ? "medium" : "low";
+              return (
+                <tr key={index}>
+                  <td>{index + 1}</td>
+                  <td>{item.type}</td>
+                  <td><span className={`confidence ${level}`}>{score.toFixed(2)}%</span></td>
+                  <td>{item.bbox?.join(", ") || "—"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
