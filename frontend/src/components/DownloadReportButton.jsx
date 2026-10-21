@@ -1,458 +1,132 @@
+import { useState } from "react";
 import jsPDF from "jspdf";
-import "./DownloadReportButton.css";
 import autoTable from "jspdf-autotable";
-
-function DownloadReportButton({ analysis, detections, imageUrl }) {
-
-    const loadImage = (url) => {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-
-        img.crossOrigin = "Anonymous";
-
-        img.onload = () => resolve(img);
-
-        img.onerror = reject;
-
-        img.src = url;
-    });
-};
-
-    const downloadPDF = async () => {
-        const doc = new jsPDF();
-        let currentY = 20;
-
-        const checkPageBreak = (requiredSpace = 20) => {
-
-        const pageHeight = doc.internal.pageSize.getHeight();
-
-        if (currentY + requiredSpace > pageHeight - 20) {
-
-        doc.addPage();
-
-        currentY = 20;
-
-        }
-
-        };
-
-        doc.setFont("helvetica", "bold");
-
-        doc.setFontSize(24);
-
-        doc.text("PCB INSPECTION REPORT", 20, currentY);
-        currentY += 15;
-
-        doc.setDrawColor(37, 99, 235);
-
-        doc.setLineWidth(0.6);
-
-        doc.line(
-        20,
-        currentY - 10,
-        190,
-        currentY - 10
-        );
-
-        doc.setFontSize(12);
-
-        doc.setFont("helvetica", "normal");
-
-        doc.text(
-        "AI Powered PCB Defect Detection System",
-        20,
-        currentY
-        );
-        currentY += 8;
-
-        doc.text(
-        "Model : YOLOv8",
-        20,
-        currentY
-        );
-
-        currentY += 8;
-
-        doc.text(
-        `Report ID : ${analysis.inspection_id}`,
-        20,
-        currentY
-        );
-
-        currentY += 8;
-
-        doc.text(
-        `Generated : ${analysis.timestamp}`,
-        20,
-        currentY
-        );
-
-        currentY += 15;
-
-        doc.setFont("helvetica", "bold");
-
-        doc.setFontSize(18);
-
-        checkPageBreak(40);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
-
-        doc.text("INSPECTION SUMMARY", 20, currentY);
-
-        currentY += 10;
-
-        // doc.setFont("helvetica", "normal");
-
-        // doc.setFontSize(12);
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(12);
-
-        doc.text(
-        `Total Defects : ${analysis.total_defects}`,
-        20,
-        currentY
-        );
-
-        currentY += 8;
-
-        doc.text(
-        `Highest Confidence : ${analysis.highest_confidence}%`,
-        20,
-        currentY
-        );
-
-        currentY += 8;
-
-        doc.text(
-        `Average Confidence : ${analysis.average_confidence}%`,
-        20,
-        currentY
-        );
-
-        currentY += 8;
-
-        doc.text(
-        `Inspection Status : ${analysis.inspection_status}`,
-        20,
-        currentY
-        );
-
-        currentY += 15;
-
-         doc.setDrawColor(200);
-
-        doc.line(20, 150, 190, 150);
-
-        checkPageBreak(50);
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
-
-        doc.text("AI RECOMMENDATION", 20, currentY);
-        currentY += 10;
-
-        doc.setDrawColor(200);
-
-        doc.line(20, 150, 190, 150);
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(12);
-
-        const recommendationLines = doc.splitTextToSize(
-            analysis.recommendation,
-            170
-        );
-
-        doc.text(
-            recommendationLines,
-            20,
-            currentY
-        );
-
-        currentY += recommendationLines.length * 7 + 12;
-        
-        checkPageBreak(60);
-
-currentY += 8;
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
-
-        doc.text("INSPECTION OBSERVATIONS", 20, currentY);
-        currentY += 10;
-
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(12);
-
-        analysis.observations.forEach((item) => {
-
-        doc.text(`• ${item}`, 25, currentY);
-
-        currentY += 8;
-
-        });
-        currentY += 10;
-
-       
-        
-
-        checkPageBreak(100);
-         doc.setFont("helvetica", "bold");
-        doc.setFontSize(18);
-        
-         doc.text("DETECTION TABLE", 20, currentY);
-        currentY += 10;
-    autoTable(doc, {
-
-    startY: currentY,
-
-    head: [["#", "Defect", "Confidence"]],
-
-    body: detections.map((item, index) => [
-
-        index + 1,
-
-        item.type,
-
-        `${(item.confidence * 100).toFixed(2)}%`
-
-    ]),
-
-    theme: "grid",
-
-    headStyles: {
-
-        fillColor: [37, 99, 235],
-
-        textColor: 255,
-
-        halign: "center"
-
-    },
-
-    bodyStyles: {
-
-        halign: "center"
-
-    }
-
-    });
-         
-        currentY = doc.lastAutoTable.finalY + 15;
-
-
-        checkPageBreak(120);
-
-doc.setDrawColor(180);
-
-doc.line(20, currentY, 190, currentY);
-
-currentY += 8;
-
-doc.setFont("helvetica", "bold");
-doc.setFontSize(18);
-
-doc.text(
-    "ANNOTATED PCB RESULT",
-    20,
-    currentY
-);
-
-        currentY += 12;
-        
-        doc.setFont("helvetica", "normal");
-doc.setFontSize(12);
-
-doc.text(
-    "Inspection Model : YOLOv8",
-    20,
-    currentY
-);
-
-currentY += 8;
-
-doc.text(
-    "Confidence Threshold : 25%",
-    20,
-    currentY
-);
-
-currentY += 8;
-
-doc.text(
-    "Image Resolution : 640 × 640",
-    20,
-    currentY
-);
-
-        currentY += 12;
-        
-        // =======================================
-// LOAD & INSERT ANNOTATED PCB IMAGE
-// =======================================
-
-try {
-
-    checkPageBreak(140);
-
-    const img = await loadImage(imageUrl);
-
-    const canvas = document.createElement("canvas");
-
-    const ctx = canvas.getContext("2d");
-
-    canvas.width = img.width;
-    canvas.height = img.height;
-
-    ctx.drawImage(img, 0, 0);
-
-    const imgData = canvas.toDataURL("image/jpeg");
-
-    const maxWidth = 170;
-
-    const maxHeight = 110;
-
-    const ratio = Math.min(
-        maxWidth / img.width,
-        maxHeight / img.height
-    );
-
-    const imgWidth = img.width * ratio;
-
-    const imgHeight = img.height * ratio;
-
-    const x = (210 - imgWidth) / 2;
-
-    doc.addImage(
-        imgData,
-        "JPEG",
-        x,
-        currentY,
-        imgWidth,
-        imgHeight
-    );
-
-    currentY += imgHeight + 8;
-
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(11);
-
-    doc.text(
-        "Figure 1 : YOLOv8 PCB Defect Detection Result",
-        105,
-        currentY,
-        {
-            align: "center"
-        }
-    );
-
-    currentY += 15;
-
-}
-catch (error) {
-
-    console.error(error);
-
-    doc.setTextColor(220,0,0);
-
-    doc.text(
-        "Unable to load annotated PCB image.",
-        20,
-        currentY
-    );
-
-    currentY += 10;
-
-    doc.setTextColor(0,0,0);
-
-}
-
-
-
-        checkPageBreak(60);
-        doc.setDrawColor(180);
-
-doc.line(
-    20,
-    currentY,
-    190,
-    currentY
-);
-
-currentY += 10;
-
-doc.setFont("helvetica", "bold");
-doc.setFontSize(14);
-
-doc.text(
-    "Generated By",
-    20,
-    currentY
-);
-
-currentY += 8;
-
-doc.setFont("helvetica", "normal");
-doc.setFontSize(12);
-
-doc.text(
-    "AI Powered PCB Defect Detection System",
-    20,
-    currentY
-);
-
-currentY += 8;
-
-doc.text(
-    "Model : YOLOv8",
-    20,
-    currentY
-);
-
-currentY += 8;
-
-doc.text(
-    `Report ID : ${analysis.inspection_id}`,
-    20,
-    currentY
-);
-
-currentY += 8;
-
-doc.text(
-    `Generated : ${analysis.timestamp}`,
-    20,
-    currentY
-);
-
-currentY += 12;
-
-doc.setFontSize(10);
-
-doc.text(
-    "© 2026 AI Powered PCB Defect Detection System",
-    20,
-    currentY
-);
-
-        doc.save(
-            `PCB_Inspection_Report_${analysis.inspection_id}.pdf`);
+import { toast } from "react-toastify";
+import "./DownloadReportButton.css";
+
+function imageAsDataUrl(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      canvas.getContext("2d").drawImage(image, 0, 0);
+      resolve({
+        data: canvas.toDataURL("image/jpeg", 0.9),
+        width: canvas.width,
+        height: canvas.height,
+      });
     };
+    image.onerror = reject;
+    image.src = src;
+  });
+}
 
-    return (
+function DownloadReportButton({ analysis, detections = [], imageUrl }) {
+  const [downloading, setDownloading] = useState(false);
 
-        <button
-            onClick={downloadPDF}
-            className="download-report-btn"
-        >
+  async function downloadPDF() {
+    setDownloading(true);
+    try {
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const bottom = doc.internal.pageSize.getHeight() - 20;
+      let y = 20;
+      function ensure(height) {
+        if (y + height > bottom) {
+          doc.addPage();
+          y = 20;
+        }
+      }
+      function section(title) {
+        ensure(20);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(15);
+        doc.text(title, 20, y);
+        y += 9;
+      }
+      function paragraph(text) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        const lines = doc.splitTextToSize(String(text), pageWidth - 40);
+        ensure(lines.length * 5 + 6);
+        doc.text(lines, 20, y);
+        y += lines.length * 5 + 5;
+      }
 
-            Download Inspection Report
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(21);
+      doc.text("PCB INSPECTION REPORT", 20, y);
+      y += 12;
+      paragraph("AI-Powered PCB Defect Detection | YOLOv8");
+      paragraph(`Inspection ID: ${analysis.inspection_id}`);
+      paragraph(`Generated: ${analysis.timestamp}`);
+      section("Inspection summary");
+      paragraph(`Status: ${analysis.inspection_status} | Potential defects: ${analysis.total_defects}`);
+      paragraph(`Highest confidence: ${analysis.highest_confidence}% | Average: ${analysis.average_confidence}%`);
+      paragraph(`Detection threshold: ${analysis.confidence_threshold}%`);
+      paragraph(`Most common class: ${analysis.most_common_defect || "None"}`);
+      section("Recommendation");
+      paragraph(analysis.recommendation);
+      section("Observations");
+      for (const item of (analysis.observations || [])) paragraph(`- ${item}`);
 
-        </button>
+      section("Detected defects");
+      autoTable(doc, {
+        startY: y,
+        margin: { left: 20, right: 20 },
+        head: [["#", "Class", "Confidence", "Bounding box"]],
+        body: detections.length
+          ? detections.map((item, index) => [
+            String(index + 1),
+            item.type,
+            `${(item.confidence * 100).toFixed(2)}%`,
+            (item.bbox || []).join(", "),
+          ])
+          : [["-", "No detections", "-", "-"]],
+        theme: "grid",
+        headStyles: { fillColor: [37, 99, 235] },
+      });
+      y = (doc.lastAutoTable?.finalY || y) + 14;
 
-    );
+      section("Annotated PCB image");
+      try {
+        const image = await imageAsDataUrl(imageUrl);
+        const scale = Math.min(170 / image.width, 108 / image.height);
+        const width = image.width * scale;
+        const height = image.height * scale;
+        ensure(height + 12);
+        doc.addImage(image.data, "JPEG", (pageWidth - width) / 2, y, width, height);
+        y += height + 10;
+      } catch {
+        paragraph("Annotated image could not be embedded. Review the dashboard image separately.");
+      }
+      paragraph("AI-assisted preliminary inspection only; not proof of electrical functionality.");
 
+      const totalPages = doc.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        doc.setFontSize(8);
+        doc.setTextColor(110);
+        doc.text(`Page ${p} of ${totalPages}`, pageWidth - 20, 289, { align: "right" });
+      }
+      doc.save(`PCB_Inspection_${analysis.inspection_id}.pdf`);
+      toast.success("Inspection report downloaded.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not create PDF report.");
+    } finally {
+      setDownloading(false);
+    }
+  }
+
+  return (
+    <button className="download-report-btn" type="button" onClick={downloadPDF} disabled={downloading}>
+      {downloading ? "Preparing PDF…" : "Download Inspection PDF"}
+    </button>
+  );
 }
 
 export default DownloadReportButton;
